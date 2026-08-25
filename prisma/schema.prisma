@@ -1,0 +1,98 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SubscriberStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+enum PaymentMethod {
+  CASH
+  BKASH
+  NAGAD
+  BANK
+  ROCKET
+  OTHER
+}
+
+model Package {
+  id           String   @id @default(cuid())
+  name         String
+  speedMbps    Int
+  priceBDT     Float
+  durationDays Int      @default(30)
+  description  String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscribers Subscriber[]
+
+  @@map("packages")
+}
+
+model Subscriber {
+  id             String           @id @default(cuid())
+  name           String
+  phone          String
+  email          String?
+  address        String
+  nid            String?
+  status         SubscriberStatus @default(ACTIVE)
+  connectionDate DateTime         @default(now())
+  expiryDate     DateTime
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  packageId String
+  package   Package @relation(fields: [packageId], references: [id])
+
+  payments   Payment[]
+  connection Connection?
+
+  @@map("subscribers")
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  amount    Float
+  method    PaymentMethod @default(CASH)
+  date      DateTime      @default(now())
+  month     Int
+  year      Int
+  note      String?
+  receiptNo String?
+
+  subscriberId String
+  subscriber   Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@map("payments")
+}
+
+model Connection {
+  id          String  @id @default(cuid())
+  ipAddress   String?
+  macAddress  String?
+  routerModel String?
+  location    String?
+  oltPort     String?
+  onuSerial   String?
+
+  subscriberId String     @unique
+  subscriber   Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("connections")
+}

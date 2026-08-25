@@ -220,7 +220,7 @@ export async function getSubscriberStatusByPhone(phoneQuery: string) {
   const isExpired = expiry < now;
 
   const currentMonthPayment = subscriber.payments.find(
-    (p) => p.month === currentMonth && p.year === currentYear
+    (p: { month: number; year: number }) => p.month === currentMonth && p.year === currentYear
   );
 
   const isPaymentPending = isExpired || !currentMonthPayment || subscriber.status === 'EXPIRED';

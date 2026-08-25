@@ -92,7 +92,7 @@ export async function getMonthlyBillingSummary(month: number, year: number) {
   });
 
   const expectedRevenue = activeSubscribers.reduce(
-    (sum, sub) => sum + sub.package.priceBDT,
+    (sum: number, sub: { package: { priceBDT: number } }) => sum + sub.package.priceBDT,
     0
   );
 
@@ -103,10 +103,10 @@ export async function getMonthlyBillingSummary(month: number, year: number) {
     distinct: ['subscriberId'],
   });
 
-  const paidIds = new Set(paidSubscriberIds.map((p) => p.subscriberId));
+  const paidIds = new Set(paidSubscriberIds.map((p: { subscriberId: string }) => p.subscriberId));
 
   // Who hasn't paid
-  const unpaid = activeSubscribers.filter((s) => !paidIds.has(s.id));
+  const unpaid = activeSubscribers.filter((s: { id: string }) => !paidIds.has(s.id));
 
   return {
     collected: payments._sum.amount || 0,
@@ -116,7 +116,7 @@ export async function getMonthlyBillingSummary(month: number, year: number) {
     paidCount: paidIds.size,
     unpaidCount: unpaid.length,
     unpaidSubscribers: JSON.parse(JSON.stringify(
-      unpaid.map((s) => ({
+      unpaid.map((s: { id: string; name: string; phone: string; package: { name: string; priceBDT: number } }) => ({
         id: s.id,
         name: s.name,
         phone: s.phone,

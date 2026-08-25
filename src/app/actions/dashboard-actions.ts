@@ -94,7 +94,7 @@ export async function getPackageDistribution() {
     },
   });
 
-  return packages.map((pkg) => ({
+  return packages.map((pkg: { name: string; _count: { subscribers: number }; speedMbps: number }) => ({
     name: pkg.name,
     value: pkg._count.subscribers,
     speed: pkg.speedMbps,
