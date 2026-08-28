@@ -109,9 +109,29 @@ export default function PaymentModal({
   const [verificationMessageIndex, setVerificationMessageIndex] = useState(0);
   const [showDetails, setShowDetails] = useState(false);
 
+  const [systemSettings, setSystemSettings] = useState<{
+    supportPhone?: string;
+    bkashNumber?: string;
+    nagadNumber?: string;
+    rocketNumber?: string;
+  }>({});
+
   // Sync selected subscriber or default values when modal opens
   useEffect(() => {
     if (isOpen) {
+      async function loadSettings() {
+        try {
+          const { getSystemSettings } = await import('@/app/actions/settings-actions');
+          const data = await getSystemSettings();
+          if (data) {
+            setSystemSettings(data);
+          }
+        } catch {
+          // ignore fallback
+        }
+      }
+      loadSettings();
+
       const activeSub = subscriber || (selectedSubId ? subscribersList.find((s) => s.id === selectedSubId) : null);
       if (activeSub) {
         setSelectedSubId(activeSub.id);
@@ -156,7 +176,7 @@ export default function PaymentModal({
       color: '#df146e',
       hoverColor: '#c2105e',
       lightBg: '#fef1f6',
-      accountNumber: '01700000000',
+      accountNumber: systemSettings.bkashNumber || '01700-000000',
       holderName: 'NetManager WiFi Gateway',
       instructions: [
         '*247# ডায়াল করে আপনার BKASH মোবাইল মেনুতে যান অথবা BKASH অ্যাপে যান।',
@@ -174,7 +194,7 @@ export default function PaymentModal({
       color: '#e31c25',
       hoverColor: '#bd131a',
       lightBg: '#fff2f2',
-      accountNumber: '01800000000',
+      accountNumber: systemSettings.nagadNumber || '01700-000000',
       holderName: 'NetManager WiFi Gateway',
       instructions: [
         '*167# ডায়াল করে আপনার NAGAD মোবাইল মেনুতে যান অথবা অ্যাপে যান।',
@@ -192,7 +212,7 @@ export default function PaymentModal({
       color: '#8c348d',
       hoverColor: '#712572',
       lightBg: '#fbf5fb',
-      accountNumber: '01900000000',
+      accountNumber: systemSettings.rocketNumber || '01700-000000',
       holderName: 'NetManager WiFi Gateway',
       instructions: [
         '*322# ডায়াল করে আপনার ROCKET মোবাইল মেনুতে যান অথবা অ্যাপে যান।',

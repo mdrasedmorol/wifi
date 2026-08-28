@@ -21,7 +21,7 @@ function AppShell({ children }: { children: ReactNode }) {
     return t('appName');
   };
 
-  const isPublicRoute = pathname === '/';
+  const isPublicRoute = pathname === '/' || pathname === '/login';
 
   if (isPublicRoute) {
     return <div className="public-layout-container">{children}</div>;

@@ -190,50 +190,103 @@ export async function getSubscriberStatusByPhone(phoneQuery: string) {
     return { success: false, error: 'Please enter a valid mobile number.' };
   }
 
-  const subscriber = await prisma.subscriber.findFirst({
-    where: {
-      OR: [
-        { phone: { contains: cleanPhone } },
-        { phone: { equals: phoneQuery } },
-      ],
-    },
-    include: {
-      package: true,
-      connection: true,
-      payments: {
-        orderBy: { date: 'desc' },
-        take: 5,
+  try {
+    // Try multiple matching strategies for robustness
+    let subscriber = await prisma.subscriber.findFirst({
+      where: {
+        OR: [
+          { phone: { contains: cleanPhone, mode: 'insensitive' } },
+          { phone: { equals: phoneQuery, mode: 'insensitive' } },
+          { phone: { endsWith: cleanPhone, mode: 'insensitive' } },
+        ],
       },
-    },
-  });
+      include: {
+        package: true,
+        connection: true,
+        payments: {
+          orderBy: { date: 'desc' },
+          take: 5,
+        },
+      },
+    });
 
-  if (!subscriber) {
-    return { success: false, error: 'No registered subscriber account found with this phone number.' };
+    // If still not found, try with last 10 digits (standard BD number without country code)
+    if (!subscriber && cleanPhone.length >= 10) {
+      const last10 = cleanPhone.slice(-10);
+      subscriber = await prisma.subscriber.findFirst({
+        where: {
+          phone: { contains: last10, mode: 'insensitive' },
+        },
+        include: {
+          package: true,
+          connection: true,
+          payments: {
+            orderBy: { date: 'desc' },
+            take: 5,
+          },
+        },
+      });
+    }
+
+    if (!subscriber) {
+      return {
+        success: false,
+        notFound: true,
+        searchedPhone: phoneQuery.trim(),
+        error: 'No customer was found for this number.',
+      };
+    }
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    const expiry = new Date(subscriber.expiryDate);
+    const daysRemaining = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const isExpired = expiry < now;
+
+    const currentMonthPayment = subscriber.payments.find(
+      (p: { month: number; year: number }) => p.month === currentMonth && p.year === currentYear
+    );
+
+    const isPaymentPending = isExpired || !currentMonthPayment || subscriber.status === 'EXPIRED';
+    const dueAmount = isPaymentPending ? subscriber.package.priceBDT : 0;
+
+    return {
+      success: true,
+      subscriber: JSON.parse(JSON.stringify(subscriber)),
+      isPaymentPending,
+      dueAmount,
+      daysRemaining,
+      currentMonthPaid: !!currentMonthPayment,
+      lastPayment: subscriber.payments[0] ? JSON.parse(JSON.stringify(subscriber.payments[0])) : null,
+    };
+  } catch (err) {
+    console.error('Error looking up subscriber by phone:', err);
+    return { success: false, error: 'Database connection error. Please try again later.' };
   }
+}
 
-  const now = new Date();
-  const currentMonth = now.getMonth() + 1;
-  const currentYear = now.getFullYear();
+// Fetch a few real subscriber phone numbers for homepage quick-lookup pills
+export async function getSampleSubscriberPhones() {
+  try {
+    const subscribers = await prisma.subscriber.findMany({
+      take: 4,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        name: true,
+        phone: true,
+        status: true,
+      },
+    });
 
-  const expiry = new Date(subscriber.expiryDate);
-  const daysRemaining = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  const isExpired = expiry < now;
-
-  const currentMonthPayment = subscriber.payments.find(
-    (p: { month: number; year: number }) => p.month === currentMonth && p.year === currentYear
-  );
-
-  const isPaymentPending = isExpired || !currentMonthPayment || subscriber.status === 'EXPIRED';
-  const dueAmount = isPaymentPending ? subscriber.package.priceBDT : 0;
-
-  return {
-    success: true,
-    subscriber: JSON.parse(JSON.stringify(subscriber)),
-    isPaymentPending,
-    dueAmount,
-    daysRemaining,
-    currentMonthPaid: !!currentMonthPayment,
-    lastPayment: subscriber.payments[0] ? JSON.parse(JSON.stringify(subscriber.payments[0])) : null,
-  };
+    return subscribers.map((s: { name: string; phone: string; status: string }) => ({
+      name: s.name,
+      phone: s.phone,
+      label: `${s.phone} (${s.status.charAt(0) + s.status.slice(1).toLowerCase()})`,
+    }));
+  } catch {
+    return [];
+  }
 }
 

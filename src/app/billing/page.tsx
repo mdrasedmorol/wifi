@@ -10,9 +10,11 @@ import {
   getMonthlyBillingSummary,
 } from '@/app/actions/payment-actions';
 import { getSubscribers } from '@/app/actions/subscriber-actions';
+import Link from 'next/link';
 import {
   Plus,
   CreditCard,
+  Calendar,
   Search,
   ChevronLeft,
   ChevronRight,
@@ -136,10 +138,16 @@ export default function BillingPage() {
             <ChevronRight size={20} />
           </button>
         </div>
-        <button className="btn btn-primary" onClick={() => openPaymentModal()} id="record-payment-btn">
-          <Plus size={16} />
-          {t('recordPayment')}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link href="/billing/calendar" className="btn btn-secondary">
+            <Calendar size={16} />
+            <span>Billing Calendar</span>
+          </Link>
+          <button className="btn btn-primary" onClick={() => openPaymentModal()} id="record-payment-btn">
+            <Plus size={16} />
+            {t('recordPayment')}
+          </button>
+        </div>
       </div>
 
       {/* Billing Summary */}

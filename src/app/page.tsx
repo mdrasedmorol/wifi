@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 import { useToast } from '@/components/ToastProvider';
 import PaymentModal, { SubscriberOption } from '@/components/PaymentModal';
-import { getSubscriberStatusByPhone, getSubscribers } from '@/app/actions/subscriber-actions';
+import { getSubscriberStatusByPhone, getSubscribers, getSampleSubscriberPhones } from '@/app/actions/subscriber-actions';
 import { getPackages } from '@/app/actions/package-actions';
 import {
   Wifi,
@@ -25,7 +25,11 @@ import {
   Check,
   RefreshCw,
   LayoutDashboard,
-  ChevronDown,
+  UserX,
+  PhoneCall,
+  HelpCircle,
+  PlusCircle,
+  SearchX,
 } from 'lucide-react';
 
 interface LookupResult {
@@ -74,11 +78,11 @@ interface PackageItem {
   description?: string;
 }
 
-const SAMPLE_NUMBERS = [
-  { name: 'Rahim', phone: '01712345678', label: '01712345678 (Active)' },
-  { name: 'Karim', phone: '01812345678', label: '01812345678 (Expiring)' },
-  { name: 'Fatema', phone: '01612345678', label: '01612345678 (Expired)' },
-];
+interface SamplePhone {
+  name: string;
+  phone: string;
+  label: string;
+}
 
 export default function HomePage() {
   const { t, locale, toggleLocale } = useLanguage();
@@ -88,16 +92,33 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LookupResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [notFoundState, setNotFoundState] = useState<{ phone: string } | null>(null);
 
   const [packages, setPackagesList] = useState<PackageItem[]>([]);
   const [allSubscribersList, setAllSubscribersList] = useState<SubscriberOption[]>([]);
+  const [samplePhones, setSamplePhones] = useState<SamplePhone[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedSubForPayment, setSelectedSubForPayment] = useState<SubscriberOption | null>(null);
 
-  // Load packages & subscribers for demo dropdown / payment options
+  const [systemSettings, setSystemSettings] = useState<{
+    panelName?: string;
+    supportPhone?: string;
+    logoUrl?: string;
+  }>({
+    panelName: 'NetManager',
+    supportPhone: '+880 1700-000000',
+  });
+
+  // Load packages, subscribers, sample phone numbers, and system settings
   useEffect(() => {
     async function loadData() {
       try {
+        const { getSystemSettings } = await import('@/app/actions/settings-actions');
+        const sysSettings = await getSystemSettings();
+        if (sysSettings) {
+          setSystemSettings(sysSettings);
+        }
+
         const pkgs = await getPackages(false);
         setPackagesList(pkgs);
 
@@ -105,8 +126,14 @@ export default function HomePage() {
         if (subsRes?.subscribers) {
           setAllSubscribersList(subsRes.subscribers);
         }
+
+        // Load real subscriber phones for quick-lookup pills
+        const phones = await getSampleSubscriberPhones();
+        if (phones && phones.length > 0) {
+          setSamplePhones(phones);
+        }
       } catch (err) {
-        console.error('Failed to load initial packages or subscribers', err);
+        console.error('Failed to load initial data', err);
       }
     }
     loadData();
@@ -121,6 +148,7 @@ export default function HomePage() {
 
     setLoading(true);
     setErrorMessage(null);
+    setNotFoundState(null);
 
     try {
       const res = await getSubscriberStatusByPhone(targetPhone);
@@ -133,10 +161,15 @@ export default function HomePage() {
           currentMonthPaid: !!res.currentMonthPaid,
           lastPayment: res.lastPayment || undefined,
         });
+        setNotFoundState(null);
         showToast('Subscriber account found!', 'success');
       } else {
         setResult(null);
-        setErrorMessage(res.error || 'No subscriber account found with this phone number.');
+        if (res.notFound || (res.error && res.error.toLowerCase().includes('no customer'))) {
+          setNotFoundState({ phone: targetPhone.trim() });
+        } else {
+          setErrorMessage(res.error || t('noCustomerFound'));
+        }
       }
     } catch {
       setErrorMessage('Server connection error. Please try again.');
@@ -281,10 +314,11 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Quick Sample Pills */}
+            {/* Quick Lookup Pills — loaded from real subscriber data */}
+            {samplePhones.length > 0 && (
             <div className="sample-pills-row">
               <span className="sample-label">{t('sampleNumbers')}</span>
-              {SAMPLE_NUMBERS.map((sample) => (
+              {samplePhones.map((sample) => (
                 <button
                   key={sample.phone}
                   type="button"
@@ -298,18 +332,109 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
-          {/* Error Notice */}
-          {errorMessage && (
+          {/* Error Notice or Beautiful No Customer Found Card */}
+          {notFoundState ? (
+            <div className="no-customer-card animate-slide-up" id="lookup-result-section">
+              <div className="no-customer-top-bar">
+                <div className="no-customer-badge">
+                  <UserX size={14} className="text-rose-400" />
+                  <span>ISP Subscriber Lookup</span>
+                </div>
+                <div className="searched-phone-pill">
+                  <Phone size={13} />
+                  <span>{t('searchedNumberLabel')}: <strong>{notFoundState.phone}</strong></span>
+                </div>
+              </div>
+
+              <div className="no-customer-body">
+                <div className="no-customer-icon-container">
+                  <div className="no-customer-icon-bg">
+                    <UserX size={38} className="no-customer-main-icon" />
+                  </div>
+                  <span className="no-customer-ping-dot" />
+                </div>
+
+                <div className="no-customer-content">
+                  <h2 className="no-customer-main-title">{t('noCustomerFound')}</h2>
+                  <p className="no-customer-subtext">{t('noCustomerFoundDesc')}</p>
+                </div>
+              </div>
+
+              {/* Troubleshooting Tips Card */}
+              <div className="no-customer-tips-grid">
+                <div className="tip-card">
+                  <div className="tip-icon-box blue">
+                    <SearchX size={18} />
+                  </div>
+                  <div className="tip-info">
+                    <h4>Check for Typos</h4>
+                    <p>{t('checkNumberHint')}</p>
+                  </div>
+                </div>
+
+                <div className="tip-card">
+                  <div className="tip-icon-box purple">
+                    <HelpCircle size={18} />
+                  </div>
+                  <div className="tip-info">
+                    <h4>Verify Registered Number</h4>
+                    <p>Accounts are registered under the mobile number provided during connection setup.</p>
+                  </div>
+                </div>
+
+                <div className="tip-card">
+                  <div className="tip-icon-box emerald">
+                    <PhoneCall size={18} />
+                  </div>
+                  <div className="tip-info">
+                    <h4>Need Help?</h4>
+                    <p>Our NOC & billing support team is available 24/7 to locate your subscription.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="no-customer-actions-row">
+                <a href={`tel:${systemSettings.supportPhone || '+8801700000000'}`} className="btn-no-cust btn-helpline-glow">
+                  <PhoneCall size={17} />
+                  <span>{t('contactHelpline')} ({systemSettings.supportPhone || '+880 1700-000000'})</span>
+                </a>
+
+                <a href="#packages-section" className="btn-no-cust btn-apply-conn">
+                  <PlusCircle size={17} />
+                  <span>{t('applyNewConnection')}</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotFoundState(null);
+                    setErrorMessage(null);
+                    const inputEl = document.querySelector<HTMLInputElement>('.search-input-field');
+                    if (inputEl) {
+                      inputEl.focus();
+                      inputEl.select();
+                    }
+                  }}
+                  className="btn-no-cust btn-retry-input"
+                >
+                  <RefreshCw size={17} />
+                  <span>{t('tryAnotherNumber')}</span>
+                </button>
+              </div>
+            </div>
+          ) : errorMessage ? (
             <div className="error-alert-box animate-fade-in">
               <AlertCircle size={20} />
               <div>
-                <strong>Account Not Found</strong>
+                <strong>Account Search Notice</strong>
                 <p>{errorMessage}</p>
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* 3. Lookup Results Dashboard Card */}
           {result && (
@@ -576,14 +701,14 @@ export default function HomePage() {
               <div className="brand-icon-box">
                 <Wifi size={22} className="text-white" />
               </div>
-              <span className="brand-title">{t('appName')} Broadband</span>
+              <span className="brand-title">{systemSettings.panelName || t('appName')} Broadband</span>
             </div>
             <p className="footer-desc">
               Premier high-speed fiber internet provider delivering reliable, ultra-fast broadband connectivity and seamless self-service bill payments.
             </p>
             <div className="hotline-box">
               <Phone size={16} />
-              <span>{t('helplineText')} <strong>+880 1700-000000</strong></span>
+              <span>{t('helplineText')} <strong>{systemSettings.supportPhone || '+880 1700-000000'}</strong></span>
             </div>
           </div>
 

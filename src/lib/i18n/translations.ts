@@ -11,6 +11,7 @@ export const translations = {
     subscribers: 'Subscribers',
     packages: 'Packages',
     billing: 'Billing',
+    billingCalendar: 'Billing Calendar',
     settings: 'Settings',
     
     // Dashboard
@@ -185,18 +186,62 @@ export const translations = {
     networkStatusLabel: 'Network Status',
     operationalText: '100% Operational',
     helplineText: '24/7 Support Helpline:',
+    
+    // Customer Lookup Empty / Not Found
+    noCustomerFound: 'No customer was found for this number',
+    noCustomerFoundDesc: 'There is no active broadband account or subscription associated with this mobile number in our ISP system.',
+    searchedNumberLabel: 'Searched Number',
+    tryAnotherNumber: 'Try Another Number',
+    contactHelpline: 'Call Support Helpline',
+    applyNewConnection: 'Request New Connection',
+    checkNumberHint: 'Please verify the mobile number entered or contact your ISP support helpline.',
+
+    // Billing Calendar
+    billingCalendarSubtitle: 'Customer start dates, monthly payment timelines, and detailed bill breakdown.',
+    connectionStartDate: 'Connection Start Date',
+    billDueDate: 'Bill Due / Expiry Date',
+    startedOn: 'Started On',
+    paymentMatrix: 'Payment Matrix',
+    calendarGrid: 'Calendar View',
+    newCustomersThisMonth: 'New Joins This Month',
+    collectionRate: 'Collection Rate',
+    paidOn: 'Paid on',
+    dueForMonth: 'Bill Due',
+    unpaidMonth: 'Unpaid',
+    quickPay: 'Quick Pay',
+    filterByMonth: 'Select Month',
+    filterByYear: 'Select Year',
+    subscriberDetailsModal: 'Customer & Billing Audit',
   },
   bn: {
     // App
     appName: 'নেটম্যানেজার',
-    appTagline: 'ওয়াইফাই গ্রাহক ব্যবস্থাপনা',
+    appTagline: 'ওয়াইফাই গ্রাহক ব্যবস্থাপনা',
 
     // Navigation
     dashboard: 'ড্যাশবোর্ড',
     subscribers: 'গ্রাহক',
     packages: 'প্যাকেজ',
     billing: 'বিলিং',
+    billingCalendar: 'বিলিং ক্যালেন্ডার',
     settings: 'সেটিংস',
+
+    // Billing Calendar
+    billingCalendarSubtitle: 'গ্রাহকের সংযোগ শুরুর তারিখ, মাসিক পেমেন্ট টাইমলাইন ও বিস্তারিত বিলিং হিসাব।',
+    connectionStartDate: 'সংযোগ শুরুর তারিখ',
+    billDueDate: 'বিল পরিশোধের শেষ তারিখ',
+    startedOn: 'শুরু করেছেন',
+    paymentMatrix: 'পেমেন্ট ম্যাট্রিক্স',
+    calendarGrid: 'ক্যালেন্ডার ভিউ',
+    newCustomersThisMonth: 'চলতি মাসে নতুন গ্রাহক',
+    collectionRate: 'আদায়ের হার',
+    paidOn: 'পরিশোধের তারিখ',
+    dueForMonth: 'বকেয়া বিল',
+    unpaidMonth: 'অপরিশোধিত',
+    quickPay: 'বিল গ্রহণ',
+    filterByMonth: 'মাস নির্বাচন',
+    filterByYear: 'বছর নির্বাচন',
+    subscriberDetailsModal: 'গ্রাহক ও বিলিং অডিট',
     
     // Dashboard
     totalSubscribers: 'মোট গ্রাহক',
@@ -370,7 +415,17 @@ export const translations = {
     networkStatusLabel: 'নেটওয়ার্ক স্ট্যাটাস',
     operationalText: '১০০% সচল',
     helplineText: '২৪/৭ হেল্পলাইন সাপোর্ট:',
+
+    // Customer Lookup Empty / Not Found
+    noCustomerFound: 'এই নাম্বারের জন্য কোনো কাস্টমার পাওয়া যায়নি',
+    noCustomerFoundDesc: 'আমাদের আইএসপি সিস্টেমে এই মোবাইল নম্বরের জন্য কোনো নিবন্ধিত অ্যাকাউন্ট বা সক্রিয় সাবস্ক্রিপশন পাওয়া যায়নি।',
+    searchedNumberLabel: 'অনুসন্ধানকৃত নম্বর',
+    tryAnotherNumber: 'অন্য নম্বর চেষ্টা করুন',
+    contactHelpline: 'হেল্পলাইনে কল করুন',
+    applyNewConnection: 'নতুন সংযোগ আবেদন',
+    checkNumberHint: 'দয়া করে প্রদেয় মোবাইল নম্বরটি পুনরায় যাচাই করুন অথবা আইএসপি হেল্পলাইনে যোগাযোগ করুন।',
   },
 } as const;
 
 export type TranslationKey = keyof typeof translations.en;
+
